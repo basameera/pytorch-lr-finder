@@ -42,6 +42,11 @@ lr_finder.plot() # to inspect the loss-learning rate graph
 lr_finder.reset() # to reset the model and optimizer to their initial state
 ```
 
+**Save the plot and history.yaml** 
+```python
+lr_finder.plot(save_path='misc/', show=False)
+```
+
 ### Leslie Smith's approach
 
 Increases the learning rate linearly and computes the evaluation loss for each learning rate. `lr_finder.plot()` plots the evaluation loss versus learning rate.
