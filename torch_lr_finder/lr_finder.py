@@ -6,6 +6,14 @@ from tqdm.autonotebook import tqdm
 from torch.optim.lr_scheduler import _LRScheduler
 import matplotlib.pyplot as plt
 
+import yaml
+
+
+def yaml_write(filename, data):
+    with open(filename, 'w') as outfile:
+        yaml.dump(data, outfile, default_flow_style=False)
+
+
 try:
     from apex import amp
 
@@ -177,7 +185,8 @@ class LRFinder(object):
         elif step_mode.lower() == "linear":
             lr_schedule = LinearLR(self.optimizer, end_lr, num_iter)
         else:
-            raise ValueError("expected one of (exp, linear), got {}".format(step_mode))
+            raise ValueError(
+                "expected one of (exp, linear), got {}".format(step_mode))
 
         if smooth_f < 0 or smooth_f >= 1:
             raise ValueError("smooth_f is outside the range [0, 1[")
@@ -199,7 +208,8 @@ class LRFinder(object):
                 self.best_loss = loss
             else:
                 if smooth_f > 0:
-                    loss = smooth_f * loss + (1 - smooth_f) * self.history["loss"][-1]
+                    loss = smooth_f * loss + \
+                        (1 - smooth_f) * self.history["loss"][-1]
                 if loss < self.best_loss:
                     self.best_loss = loss
 
@@ -209,7 +219,8 @@ class LRFinder(object):
                 print("Stopping early, the loss has diverged")
                 break
 
-        print("Learning rate search finished. See the graph with {finder_name}.plot()")
+        print(
+            "Learning rate search finished. See the graph with {finder_name}.plot()")
 
     def _set_learning_rate(self, new_lrs):
         if not isinstance(new_lrs, list):
@@ -226,7 +237,8 @@ class LRFinder(object):
     def _check_for_scheduler(self):
         for param_group in self.optimizer.param_groups:
             if "initial_lr" in param_group:
-                raise RuntimeError("Optimizer already has a scheduler attached to it")
+                raise RuntimeError(
+                    "Optimizer already has a scheduler attached to it")
 
     def _train_batch(self, iter_wrapper, accumulation_steps):
         self.model.train()
@@ -289,7 +301,7 @@ class LRFinder(object):
             for inputs, labels in dataloader:
                 # Move data to the correct device
                 inputs, labels = self._move_to_device(inputs, labels)
-                
+
                 if isinstance(inputs, tuple) or isinstance(inputs, list):
                     batch_size = inputs[0].size(0)
                 else:
@@ -302,7 +314,7 @@ class LRFinder(object):
 
         return running_loss / len(dataloader.dataset)
 
-    def plot(self, skip_start=10, skip_end=5, log_lr=True, show_lr=None):
+    def plot(self, skip_start=10, skip_end=5, log_lr=True, show_lr=None, show=True, save_path=None):
         """Plots the learning rate range test.
 
         Arguments:
@@ -343,7 +355,18 @@ class LRFinder(object):
 
         if show_lr is not None:
             plt.axvline(x=show_lr, color="red")
-        plt.show()
+
+        if save_path is not None:
+            plt.savefig(save_path + 'plot_lr_finder.pdf', dpi=300)
+            lr_data = dict(
+                x=lrs,
+                y=losses
+            )
+
+            yaml_write(save_path + 'lr_finder_data.yaml', lr_data)
+
+        if show:
+            plt.show()
 
 
 class LinearLR(_LRScheduler):
@@ -409,7 +432,8 @@ class StateCacher(object):
         if self.in_memory:
             self.cached.update({key: copy.deepcopy(state_dict)})
         else:
-            fn = os.path.join(self.cache_dir, "state_{}_{}.pt".format(key, id(self)))
+            fn = os.path.join(
+                self.cache_dir, "state_{}_{}.pt".format(key, id(self)))
             self.cached.update({key: fn})
             torch.save(state_dict, fn)
 
@@ -423,9 +447,11 @@ class StateCacher(object):
             fn = self.cached.get(key)
             if not os.path.exists(fn):
                 raise RuntimeError(
-                    "Failed to load state in {}. File doesn't exist anymore.".format(fn)
+                    "Failed to load state in {}. File doesn't exist anymore.".format(
+                        fn)
                 )
-            state_dict = torch.load(fn, map_location=lambda storage, location: storage)
+            state_dict = torch.load(
+                fn, map_location=lambda storage, location: storage)
             return state_dict
 
     def __del__(self):
