@@ -314,7 +314,7 @@ class LRFinder(object):
 
         return running_loss / len(dataloader.dataset)
 
-    def plot(self, skip_start=10, skip_end=5, log_lr=True, show_lr=None, show=True, save_path=None):
+    def plot(self, skip_start=10, skip_end=5, log_lr=True, show_lr=None, show=True, save_path=None, save_name_suffix=''):
         """Plots the learning rate range test.
 
         Arguments:
@@ -357,13 +357,15 @@ class LRFinder(object):
             plt.axvline(x=show_lr, color="red")
 
         if save_path is not None:
-            plt.savefig(save_path + 'plot_lr_finder.pdf', dpi=300)
+            plt.savefig(
+                save_path + 'plot_lr_finder{}.pdf'.format(save_name_suffix), dpi=300)
             lr_data = dict(
                 x=lrs,
                 y=losses
             )
 
-            yaml_write(save_path + 'lr_finder_data.yaml', lr_data)
+            yaml_write(
+                save_path + 'lr_finder_data{}.yaml'.format(save_name_suffix), lr_data)
 
         if show:
             plt.show()
